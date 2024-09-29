@@ -1,15 +1,46 @@
 // Setup library
 const express = require("express");
 const app = express();
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+
+// Configuration
 app.set("view engine", "ejs");
 app.set("views", "views"); // param 1: untuk menentukan views nya, param 2: direktori foler untuk menyimpan views nya
+app.use(express.urlencoded({ extended: true }));
+
+// Connection
+mongoose
+  .connect("mongodb://127.0.0.1/auth_demo")
+  .then((result) => {
+    console.log("connect to mongodb");
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 
 // Model
 const User = require("./models/user");
 
 // Route
+app.get("/", (req, res) => {
+  res.send("homepage");
+});
+
 app.get("/register", (req, res) => {
   res.render("register");
+});
+
+app.post("/register", async (req, res) => {
+  // res.send(req.body);
+  const { username, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const user = new User({
+    username,
+    password: hashedPassword,
+  });
+  await user.save();
+  res.redirect("/");
 });
 
 app.get("/admin", (req, res) => {
