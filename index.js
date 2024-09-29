@@ -73,11 +73,19 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post("/logout", (req, res) => {
+  // req.session.user_id = null; // spesifically for 1 session
+  // for all sesion exist, so be careful
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+});
+
 app.get("/admin", (req, res) => {
   if (!req.session.user_id) {
     res.redirect("/login");
   }
-  res.send("Halaman admin hanya bisa di akses jika kamu sudah login!");
+  res.render("admin");
 });
 
 app.listen(3000, () => {
