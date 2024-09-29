@@ -17,6 +17,21 @@ app.use(
   })
 );
 
+// Middleware Auth
+const auth = (req, res, next) => {
+  if (!req.session.user_id) {
+    return res.redirect("/login");
+  }
+  next();
+};
+
+const noAuth = (req, res, next) => {
+  if (req.session.user_id) {
+    return res.redirect("/admin");
+  }
+  next();
+};
+
 // Connection
 mongoose
   .connect("mongodb://127.0.0.1/auth_demo")
@@ -35,11 +50,11 @@ app.get("/", (req, res) => {
   res.send("homepage");
 });
 
-app.get("/register", (req, res) => {
+app.get("/register", noAuth, (req, res) => {
   res.render("register");
 });
 
-app.post("/register", async (req, res) => {
+app.post("/register", noAuth, async (req, res) => {
   // res.send(req.body);
   const { username, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -51,11 +66,11 @@ app.post("/register", async (req, res) => {
   res.redirect("/");
 });
 
-app.get("/login", (req, res) => {
+app.get("/login", noAuth, (req, res) => {
   res.render("login");
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", noAuth, async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username }); // find user
 
@@ -73,7 +88,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/logout", (req, res) => {
+app.post("/logout", auth, (req, res) => {
   // req.session.user_id = null; // spesifically for 1 session
   // for all sesion exist, so be careful
   req.session.destroy(() => {
@@ -81,11 +96,12 @@ app.post("/logout", (req, res) => {
   });
 });
 
-app.get("/admin", (req, res) => {
-  if (!req.session.user_id) {
-    res.redirect("/login");
-  }
+app.get("/admin", auth, (req, res) => {
   res.render("admin");
+});
+
+app.get("/profile/settings", auth, (req, res) => {
+  res.send("Profile Settings: " + req.session.user_id);
 });
 
 app.listen(3000, () => {
