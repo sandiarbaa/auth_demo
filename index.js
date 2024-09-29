@@ -3,11 +3,19 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const session = require("express-session");
 
 // Configuration
 app.set("view engine", "ejs");
 app.set("views", "views"); // param 1: untuk menentukan views nya, param 2: direktori foler untuk menyimpan views nya
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); // catch req body
+app.use(
+  session({
+    secret: "notasecret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 // Connection
 mongoose
@@ -55,6 +63,7 @@ app.post("/login", async (req, res) => {
   if (user) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
+      req.session.user_id = user._id;
       res.redirect("/admin");
     } else {
       res.redirect("/login");
@@ -65,6 +74,9 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/admin", (req, res) => {
+  if (!req.session.user_id) {
+    res.redirect("/login");
+  }
   res.send("Halaman admin hanya bisa di akses jika kamu sudah login!");
 });
 
