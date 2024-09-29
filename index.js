@@ -55,14 +55,10 @@ app.get("/register", noAuth, (req, res) => {
 });
 
 app.post("/register", noAuth, async (req, res) => {
-  // res.send(req.body);
   const { username, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const user = new User({
-    username,
-    password: hashedPassword,
-  });
+  const user = new User({ username, password });
   await user.save();
+  req.session.user_id = user._id;
   res.redirect("/");
 });
 
@@ -72,17 +68,12 @@ app.get("/login", noAuth, (req, res) => {
 
 app.post("/login", noAuth, async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ username }); // find user
+  const user = await User.findByCredentials(username, password); // find user
 
   // validation
   if (user) {
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      req.session.user_id = user._id;
-      res.redirect("/admin");
-    } else {
-      res.redirect("/login");
-    }
+    req.session.user_id = user._id;
+    res.redirect("/admin");
   } else {
     res.redirect("/login");
   }
